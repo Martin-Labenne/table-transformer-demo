@@ -1,3 +1,5 @@
 tableTransformer/
 .ipynb_checkpoints/
 outputs/*
+
+__pycache__
