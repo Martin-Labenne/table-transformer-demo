@@ -2,4 +2,6 @@ tableTransformer/
 .ipynb_checkpoints/
 outputs/*
 
+.env
+
 __pycache__

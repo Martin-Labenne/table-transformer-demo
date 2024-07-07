@@ -15,4 +15,5 @@ conda activate tables-detr
 conda install conda-forge::transformers
 conda install -c conda-forge jupyterlab
 conda install easyocr
+conda install python-dotenv
 ```
