@@ -1,0 +1,10 @@
+name: table-transformer
+channels:
+ - conda-forge
+ - defaults
+dependencies:
+  - python==3.10.9
+  - transformers
+  - jupyterlab
+  - easyocr
+  - python-dotenv
