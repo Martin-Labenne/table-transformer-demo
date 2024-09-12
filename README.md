@@ -22,3 +22,9 @@ conda activate table-transformer
 ```
 
 Finally, you will need to copy create a `.env` file from the template `.env.default` 
+
+## Update project dependencies
+Add packages and version to environment.yml and run the update command
+```bash
+conda env update -f environment.yml
+```
