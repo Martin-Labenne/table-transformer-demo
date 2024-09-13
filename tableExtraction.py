@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 
 # Give priority to the modules that are inside tableTransformer 
 # and handles the conflict between tableTransformer/detr/datasets and hugging face datasets' library
@@ -8,7 +9,7 @@ sys.path.insert(2, os.getcwd() + '/tableTransformer/detr')
 # This snipet is necessary for inference to work
 
 from tableTransformer.src.inference import TableExtractionPipeline, rescale_bboxes, objects_to_structures, \
-    structure_to_cells, cells_to_html, cells_to_csv, objects_to_crops
+    structure_to_cells, cells_to_html, cells_to_csv, objects_to_crops, output_result
 
 # Image to Tensor pipelines
 from tableTransformer.src.inference import structure_transform, detection_transform
@@ -29,6 +30,34 @@ def _outputs_to_objects(outputs, img_size, class_idx2name):
                             'bbox': [float(elem) for elem in bbox]})
 
     return objects
+
+def log_extracted_tables(
+        extracted_tables,
+        image_filename,
+        log_dir,
+        vizualise=False,
+        verbose=False
+    ):
+    # Create log folder if not exists
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+    args = type('Args', (object,), {
+        'visualize': vizualise, 
+        'out_dir': log_dir,
+        'verbose': verbose
+    } )
+
+    image_file_stem, image_file_ext = os.path.splitext(image_filename)
+
+    for table_idx, extracted_table in enumerate(extracted_tables): 
+        file_suffix = f'_crop_{table_idx}' if table_idx is not None else '_crop'
+
+        for key, val in extracted_table.items():
+            output_result(
+                key, val, args, 
+                extracted_table['image'], 
+                f'{image_file_stem}{file_suffix}{image_file_ext}'
+            )
 
 class PretrainTableExtractionPipeline(TableExtractionPipeline): 
     def __init__(
@@ -51,7 +80,7 @@ class PretrainTableExtractionPipeline(TableExtractionPipeline):
         self, 
         img, tokens=[], 
         out_objects=True, 
-        out_crops=False, 
+        out_crops=True, 
         crop_padding=10
     ):
         out_formats = {}
@@ -74,9 +103,13 @@ class PretrainTableExtractionPipeline(TableExtractionPipeline):
 
         # Crop image and tokens for detected table
         if out_crops:
-            tables_crops = objects_to_crops(img, tokens, objects, self.det_class_thresholds,
-                                            padding=crop_padding)
-    
+            tables_crops = objects_to_crops(
+                img, tokens, 
+                objects, 
+                self.det_class_thresholds,
+                padding=crop_padding
+            )
+
             out_formats['crops'] = tables_crops
         
         return out_formats
@@ -118,8 +151,6 @@ class PretrainTableExtractionPipeline(TableExtractionPipeline):
         tables_cells = [structure_to_cells(structure, tokens)[0] for structure in tables_structure]
         if out_cells:
             out_formats['cells'] = tables_cells
-        if not (out_html or out_csv):
-            return out_formats
 
         # Convert cells to HTML
         if out_html:
