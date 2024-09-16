@@ -76,6 +76,29 @@ class PretrainTableExtractionPipeline(TableExtractionPipeline):
             self.str_model.to(str_device)
 
 
+    """
+    `tokens` is expected to be a list of dictionaries containing a list of words and their bounding boxes in image coordinates. 
+    It is assumed to be sorted in reading order. The format for tokens is:  
+    ```python
+    [
+        {
+            'bbox': [0.0, 0.0, 50.0, 50.0],
+            'text': 'First'
+            'span_num': 1,
+            'line_num': <<line_num>> || 0,
+            'block_num': <<block_num>> || 0
+        },
+        {
+            'bbox': [52.0, 0.0, 102.0, 50.0],
+            'text': 'next'
+            'span_num': 2,
+            'line_num': <<line_num>> || 0,
+            'block_num': <<block_num>> || 0
+        }
+    ]
+    ```
+    """
+
     def detect(
         self, 
         img, tokens=[], 
