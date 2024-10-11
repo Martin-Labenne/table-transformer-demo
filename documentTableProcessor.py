@@ -9,7 +9,7 @@ TABLE_DETECTION_MODEL_PATH = "microsoft/table-transformer-detection"
 TABLE_STRUCTURE_MODEL_PATH = "microsoft/table-transformer-structure-recognition-v1.1-all"
 
 DEFAULT_DEVICE = 'cpu'
-DEFAULT_DEVICE_LANGUAGE = 'en'
+DEFAULT_OCR_LANGUAGE = 'en'
 
 DEFAULT_OUT_OPTIONS = {
     'out_objects': True,
@@ -32,7 +32,7 @@ class DocumentTableProcessor(object):
         det_device=DEFAULT_DEVICE, 
         str_device=DEFAULT_DEVICE,
         ocr_device=DEFAULT_DEVICE, 
-        ocr_language=DEFAULT_DEVICE_LANGUAGE,
+        ocr_language=DEFAULT_OCR_LANGUAGE,
         ocr_strategy=OCR_EARLY
     ) :
         
