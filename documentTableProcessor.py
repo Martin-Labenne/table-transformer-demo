@@ -98,14 +98,12 @@ class DocumentTableProcessor(object):
 
     def extract(
         self, 
-        image_path: str, 
+        image: Image.Image,
         readtext_args: dict = None, 
         out_options: dict = None,
         log: bool = False, 
         log_options: dict = None
     ): 
-        
-        image = Image.open(image_path)
 
         if self.ocr_strategy == self.OCR_EARLY : 
 
@@ -125,6 +123,6 @@ class DocumentTableProcessor(object):
             raise NotImplementedError(f'The {self.OCR_LATE} strategy is not implemented yet.')
 
         if log: 
-            log_extracted_tables(extracted_tables, image_path, **log_options)
+            log_extracted_tables(extracted_tables, **log_options)
 
         return extracted_tables
