@@ -8,3 +8,4 @@ dependencies:
   - jupyterlab
   - easyocr
   - python-dotenv
+  - fastapi==0.115.2
