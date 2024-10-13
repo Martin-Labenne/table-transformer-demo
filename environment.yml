@@ -9,3 +9,4 @@ dependencies:
   - easyocr
   - python-dotenv
   - fastapi==0.115.2
+  - openpyxl
