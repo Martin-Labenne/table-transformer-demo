@@ -1,5 +1,5 @@
-from tableExtraction import PretrainTableExtractionPipeline, log_extracted_tables
-from tokenExtraction import TokenReader
+from src.tableExtraction import PretrainTableExtractionPipeline, log_extracted_tables
+from src.tokenExtraction import TokenReader
 
 from transformers import TableTransformerForObjectDetection, AutoModelForObjectDetection
 from PIL import Image

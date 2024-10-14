@@ -5,7 +5,7 @@ import pandas as pd
 import io
 import os
 
-from documentTableProcessor import DocumentTableProcessor
+from src.documentTableProcessor import DocumentTableProcessor
 
 from dotenv import load_dotenv
 load_dotenv() 
