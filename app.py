@@ -26,6 +26,10 @@ document_table_processor = DocumentTableProcessor(
 @app.post("/extract-table")
 async def extract_table(file: UploadFile = File(...)):
     try:
+
+        filename = file.filename
+        excel_filename = f"{ os.path.splitext(filename)[0] }_extracted_tables.xlsx"
+
         # Read the uploaded file as an image
         image = Image.open(io.BytesIO(await file.read()))
 
@@ -44,27 +48,32 @@ async def extract_table(file: UploadFile = File(...)):
             readtext_args=readtext_args,
             out_options=out_options
         )
-
-         # Get the first table as a DataFrame (assuming CSV content can be loaded into DataFrame)
-        csv_content = extracted_tables[0]['csv'][0]
-        df = pd.read_csv(io.StringIO(csv_content))
-
-        # Save the DataFrame as an Excel file in memory
+        
+        # Init an in memory buffer
         excel_io = io.BytesIO()
+        
         with pd.ExcelWriter(excel_io, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Sheet1')
-        excel_io.seek(0)  # Reset pointer to the start of the file
+
+            for i, table in enumerate(extracted_tables):
+
+                csv_content = table['csv'][0]
+                df = pd.read_csv( io.StringIO(csv_content) )
+
+                 # Write each DataFrame to a separate sheet
+                sheet_name = f"Sheet{i+1}"
+                df.to_excel(writer, index=False, sheet_name=sheet_name)
+
+        # Reset pointer to the start of the file
+        # Ensures that the StreamingResponse starts reading the data from the beginning of the file
+        excel_io.seek(0)  
 
         # Return Excel file as a streaming response
         response = StreamingResponse(
             excel_io,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response.headers["Content-Disposition"] = f"attachment; filename=extracted_table.xlsx"
+        response.headers["Content-Disposition"] = f"attachment; filename={ excel_filename }"
         return response
-    
 
     except Exception as e:
         return {"error": str(e)}
-
-# To run the app: uvicorn your_script_name:app --reload
