@@ -23,7 +23,21 @@ After executing this script, you will be able to activate the environment with
 conda activate table-transformer
 ```
 
-Finally, you will need to copy create a `.env` file from the template `.env.default`
+Finally, you will need to create a `.env` file from the template `.env.default`
+
+## Running the project
+
+To run in production mode :
+
+```bash
+fastapi run app.py 
+```
+
+To run the app in dev mode:
+
+```bash
+fastapi dev app.py 
+```
 
 ## Update project dependencies
 
