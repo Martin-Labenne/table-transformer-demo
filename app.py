@@ -4,6 +4,7 @@ from PIL import Image
 import pandas as pd
 import io
 import os
+import fitz
 
 from src.documentTableProcessor import DocumentTableProcessor
 
@@ -27,27 +28,27 @@ document_table_processor = DocumentTableProcessor(
 async def extract_table(file: UploadFile = File(...)):
     try:
 
-        filename = file.filename
-        excel_filename = f"{ os.path.splitext(filename)[0] }_extracted_tables.xlsx"
+        file_name, file_extention = os.path.splitext(file.filename)
+        print(file_extention)
 
-        # Read the uploaded file as an image
-        image = Image.open(io.BytesIO(await file.read()))
+        excel_filename = f'{ file_name }_extracted_tables.xlsx'
 
-        # Set readtext arguments and output options
-        readtext_args = {'low_text': 0.3}  # Add other args if needed
-        out_options = {
-            'out_objects': True,
-            'out_cells': True,
-            'out_html': True,
-            'out_csv': True
-        }
+        if file_extention == '.pdf':
+            pdf = fitz.open(stream=io.BytesIO(await file.read()), filetype='pdf')
+            extracted_tables = document_table_processor.extract_pdf(pdf)
 
-        # Process the image and extract tables
-        extracted_tables = document_table_processor.extract(
-            image=image,
-            readtext_args=readtext_args,
-            out_options=out_options
-        )
+        else: 
+            # Read the uploaded file as an image
+            image = Image.open(io.BytesIO(await file.read()))
+
+            # easyocr args
+            readtext_args = {'low_text': 0.3}  
+
+            # Process the image and extract tables
+            extracted_tables = document_table_processor.extract(
+                image=image,
+                readtext_args=readtext_args
+            )
         
         # Init an in memory buffer
         excel_io = io.BytesIO()
@@ -60,7 +61,7 @@ async def extract_table(file: UploadFile = File(...)):
                 df = pd.read_csv( io.StringIO(csv_content) )
 
                  # Write each DataFrame to a separate sheet
-                sheet_name = f"Sheet{i+1}"
+                sheet_name = f'Sheet{ i + 1 }'
                 df.to_excel(writer, index=False, sheet_name=sheet_name)
 
         # Reset pointer to the start of the file

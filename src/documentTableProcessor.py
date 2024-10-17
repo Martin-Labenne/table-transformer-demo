@@ -1,9 +1,11 @@
 from src.tableExtraction import PretrainTableExtractionPipeline, log_extracted_tables
-from src.tokenExtraction import TokenReader
+from src.tokenExtraction import TokenReader, PDFTokenReader
 
 from transformers import TableTransformerForObjectDetection, AutoModelForObjectDetection
 from PIL import Image
-from numpy import array
+import numpy as np
+
+import fitz
 
 TABLE_DETECTION_MODEL_PATH = "microsoft/table-transformer-detection"
 TABLE_STRUCTURE_MODEL_PATH = "microsoft/table-transformer-structure-recognition-v1.1-all"
@@ -17,6 +19,8 @@ DEFAULT_OUT_OPTIONS = {
     'out_html': True,
     'out_csv': True
 }
+
+PDF_DPI = 100
 
 class DocumentTableProcessor(object): 
     OCR_EARLY = 'early'
@@ -51,6 +55,8 @@ class DocumentTableProcessor(object):
             device=self.ocr_device
         )
 
+        self.pdf_token_reader = PDFTokenReader(dpi=PDF_DPI)
+
         self.table_extraction_pipeline = PretrainTableExtractionPipeline(
             det_device=self.det_device,
             str_device=self.str_device, 
@@ -62,10 +68,10 @@ class DocumentTableProcessor(object):
         self, 
         image: Image.Image, 
         readtext_args: dict = None, 
-        out_options: dict = None
+        out_options: dict = DEFAULT_OUT_OPTIONS
     ): 
         tokens = self.token_reader.get_tokens(
-            array(image.convert('L')), readtext_args
+            np.array(image.convert('L')), readtext_args
         )
         extracted_tables = self.table_extraction_pipeline.extract(
             image.convert('RGB'), tokens=tokens, **out_options
@@ -76,7 +82,7 @@ class DocumentTableProcessor(object):
         self, 
         image: Image.Image,
         readtext_args: dict = None, 
-        out_options: dict = None
+        out_options: dict = DEFAULT_OUT_OPTIONS
     ):
         detected_tables = self.table_extraction_pipeline.detect(image.convert('RGB'))
 
@@ -84,7 +90,7 @@ class DocumentTableProcessor(object):
         for crop_table in detected_tables['crops']: 
             crop_image = crop_table['image']
             crop_tokens = self.token_reader.get_tokens(
-                array(crop_image.convert('L')), readtext_args
+                np.array(crop_image.convert('L')), readtext_args
             )
 
             extracted_table = self.table_extraction_pipeline.recognize(
@@ -100,7 +106,7 @@ class DocumentTableProcessor(object):
         self, 
         image: Image.Image,
         readtext_args: dict = None, 
-        out_options: dict = None,
+        out_options: dict = DEFAULT_OUT_OPTIONS,
         log: bool = False, 
         log_options: dict = None
     ): 
@@ -124,5 +130,33 @@ class DocumentTableProcessor(object):
 
         if log: 
             log_extracted_tables(extracted_tables, **log_options)
+
+        return extracted_tables
+    
+    def extract_pdf(
+        self, 
+        pdf: fitz.fitz.Document, 
+        out_options: dict = DEFAULT_OUT_OPTIONS
+    ):
+
+        def _convert_page_in_image(page: fitz.fitz.Page): 
+            pixmap_img = page.get_pixmap(dpi=PDF_DPI)
+        
+            # apixmap has a .samples property that contains the pixel data
+            image_data = np.frombuffer(pixmap_img.samples, dtype=np.uint8)
+
+            # Create a PIL Image from the pixel data
+            image = Image.frombuffer("RGB", [pixmap_img.width, pixmap_img.height], image_data, "raw", "RGB", 0, 1)
+
+            return image
+        
+        page = pdf[0]
+
+        tokens = self.pdf_token_reader.get_tokens(page)
+        image = _convert_page_in_image(page)
+
+        extracted_tables = self.table_extraction_pipeline.extract(
+            image, tokens, **out_options
+        )
 
         return extracted_tables

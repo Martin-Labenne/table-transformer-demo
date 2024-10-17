@@ -1,4 +1,5 @@
 from easyocr import Reader
+import fitz
 
 class TokenReader(Reader): 
     def __init__(self, language, device):
@@ -32,12 +33,15 @@ class TokenReader(Reader):
         return tokens
 
 class PDFTokenReader(): 
-    def __init__(self, flags=None, dpi=100):
-        self.flags = flags
+    def __init__(self, dpi=100):
+        self.flags = fitz.TEXT_INHIBIT_SPACES & ~fitz.TEXT_PRESERVE_IMAGES
         self.default_pdf_dpi = 72
         self.dpi = dpi
 
     def get_tokens(self, page): 
+
+        # Thanks https://github.com/microsoft/table-transformer/issues/121    
+
         words = page.get_text(option="words", flags=self.flags)
         # make sure the bounding boxes are in the same scale as the generated image
         dpi_scale = self.dpi/self.default_pdf_dpi
