@@ -150,13 +150,15 @@ class DocumentTableProcessor(object):
 
             return image
         
-        page = pdf[0]
+        extracted_tables = []
+        for page in pdf: 
+            tokens = self.pdf_token_reader.get_tokens(page)
+            image = _convert_page_in_image(page)
 
-        tokens = self.pdf_token_reader.get_tokens(page)
-        image = _convert_page_in_image(page)
-
-        extracted_tables = self.table_extraction_pipeline.extract(
-            image, tokens, **out_options
-        )
+            extracted_tables.extend(
+                self.table_extraction_pipeline.extract(
+                    image, tokens, **out_options
+                )
+            )
 
         return extracted_tables
